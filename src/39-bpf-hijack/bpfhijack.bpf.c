@@ -52,6 +52,7 @@ int handle_bpf_enter(struct trace_event_raw_sys_enter *ctx)
 		e->pid = bpf_get_current_pid_tgid() >> 32;
 		bpf_get_current_comm(&e->comm, TASK_COMM_LEN);
 		e->insn_cnt = insn_cnt;
+		bpf_probe_read_str(&e->prog_name, BPF_OBJ_NAME_LEN, uattr.prog_name);
 
 		if (insn_cnt != TARGET_BPF_INSNS) {
 			bpf_ringbuf_submit(e, 0);
@@ -68,15 +69,6 @@ int handle_bpf_enter(struct trace_event_raw_sys_enter *ctx)
                 };
 
 		for (__u32 i = 0; i < TARGET_BPF_INSNS; i++) {
-        		// Convert the instruction to a no-op instruction
-        		struct bpf_insn nop_insn = {
-            			.code = BPF_ALU64 | BPF_MOV | BPF_K,
-            			.dst_reg = BPF_REG_0,
-            			.src_reg = BPF_REG_0,
-            			.off = 0,
-            			.imm = 0
-        		};
-
         		if (i == insn_cnt-1) {
             			// Make the last instruction an exit instruction
             			nop_insn.code = BPF_EXIT;
